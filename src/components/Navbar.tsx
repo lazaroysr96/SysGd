@@ -1,22 +1,12 @@
 import { FC } from "react";
 import IconButton from "./IconButton";
-import Text, { Variant } from "../pages/Text";
-import { IoNotifications, IoPerson, IoPrint, IoSearch } from "react-icons/io5";
+import { FaHome, FaSitemap } from "react-icons/fa";
 
-const Navbar: FC = () => {
-  return (
-      <div className="w-full h-10 border-b items-center px-2 flex">
-        <Text label="Inicio" className="w-full" variant={Variant.Heading} />
-        <IconButton tooltip="Imprimir" Icon={IoPrint} onClick={() => {}} />
-        <IconButton tooltip="Buscar" Icon={IoSearch} onClick={() => {}} />
-        <IconButton
-          tooltip="Notificaciones"
-          Icon={IoNotifications}
-          onClick={() => {}}
-        />
-        <IconButton tooltip="Cuenta" Icon={IoPerson} onClick={() => {}} />
-      </div>
-  );
-};
+const NavBar: FC = () =>{
+    return <div className="w-12 max-w-12 min-w-12 items-center size-full border-r border-slate-400 flex gap-1 flex-col bg-slate-500 dark:bg-slate-800 dark:border-slate-700">
+        <IconButton Icon={FaHome} tooltip="Inicio" onClick={()=>{}} variant={1}/>
+        <IconButton Icon={FaSitemap} tooltip="Organigrama" onClick={()=>{}} variant={1}/>
+    </div>
+}
 
-export default Navbar;
+export default NavBar

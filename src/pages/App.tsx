@@ -1,16 +1,19 @@
 import { FC } from "react";
 import ClassificationBox from "../components/ClassificationBox";
 import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import HeadBar from "../components/HeadBar";
+import NavBar from "../components/Navbar";
 
 const App: FC = () => {
   return (
-    <div className="h-screen flex items-center justify-center">
-      <Sidebar/>
+    <div className="flex h-screen w-full flex-col">
+      <HeadBar />
+      <div className="size-full flex overflow-auto">
 
-      <div className="size-full flex flex-col">
-        <Navbar/>
-        <ClassificationBox/>
+        <NavBar/>
+        <Sidebar />
+
+        <ClassificationBox />
       </div>
     </div>
   );

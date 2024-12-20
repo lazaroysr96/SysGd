@@ -7,7 +7,7 @@ import { IoIosAddCircle, IoIosAppstore, IoIosPeople } from "react-icons/io";
 import Dropdown from "./Dropdown";
 import Text from "../pages/Text";
 
-const ClassificationBox: FC = () => {
+const MainContainer: FC = () => {
   return (
     <div className="flex flex-col size-full bg-slate-200 dark:bg-slate-950">
       <div className="flex size-full">
@@ -49,4 +49,4 @@ const ClassificationBox: FC = () => {
   );
 };
 
-export default ClassificationBox;
+export default MainContainer;

@@ -1,9 +1,22 @@
-import { FC } from "react";
+import { FC, HTMLAttributes } from "react";
 
-const Button: FC<{ label: string; onClick: () => void }> = ({ label, onClick }) => {
+export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
+  isDisabled?: boolean;
+}
+
+const Button: FC<ButtonProps> = ({
+  onClick,
+  isDisabled,
+  children,
+  ...props
+}) => {
   return (
-    <button onClick={onClick} className="bg-slate-600 py-1.5 px-5 rounded text-white hover:bg-slate-500">
-      {label}
+    <button
+      disabled={isDisabled}
+      className="bg-slate-600 py-1.5 px-5 rounded text-white hover:bg-slate-500 disabled:opacity-65 disabled:hover:bg-slate-600 disabled:cursor-not-allowed transition duration-500"
+      {...props}
+    >
+      {children}
     </button>
   );
 };

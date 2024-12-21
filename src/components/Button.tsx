@@ -5,7 +5,6 @@ export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
 }
 
 const Button: FC<ButtonProps> = ({
-  onClick,
   isDisabled,
   children,
   ...props
@@ -13,7 +12,7 @@ const Button: FC<ButtonProps> = ({
   return (
     <button
       disabled={isDisabled}
-      className="bg-slate-600 py-1.5 px-5 rounded text-white hover:bg-slate-500 disabled:opacity-65 disabled:hover:bg-slate-600 disabled:cursor-not-allowed transition duration-500"
+      className="bg-slate-600 text-sm font-light uppercase py-1.5 rounded text-white hover:bg-slate-500 disabled:opacity-65 disabled:hover:bg-slate-600 disabled:cursor-not-allowed transition duration-500 min-w-32"
       {...props}
     >
       {children}

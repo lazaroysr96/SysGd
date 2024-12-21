@@ -39,7 +39,7 @@ const SecondarySidebar: FC = () => {
             <TextInput label="Plazo de Retención AG" />
             <TextInput label="Plazo de Retención AC" />
             <TextInput label="Observaciones" />
-            <Button label="Insertar" onClick={() => {}} />
+            <Button onClick={() => {}} >Insertar</Button>
           </div>
         </div>
       </div>

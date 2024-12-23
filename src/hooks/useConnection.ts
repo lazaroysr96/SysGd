@@ -3,6 +3,7 @@ type useConnectionReturnType = {
     onSuccess: (message: string) => void,
     onFail: (message: string) => void
   ) => void;
+
   handleSqlLogin: (
     servername: string,
     username: string,
@@ -10,6 +11,21 @@ type useConnectionReturnType = {
     dbname: string,
     onSuccess: (message: string) => void,
     onFail: (message: string) => void
+  ) => void;
+
+  handleNewArchiving: (
+    code: string,
+    company: string,
+    name: string,
+    onSuccess: () => void,
+    onFail: () => void
+  ) => void;
+
+  handleAddClassificationBoxData: (
+    code: string,
+    data: string,
+    onSuccess: () => void,
+    onFail: () => void
   ) => void;
 };
 
@@ -67,7 +83,72 @@ const useConnection = (): useConnectionReturnType => {
     req.send(form);
   };
 
-  return { handleServerStatus, handleSqlLogin };
+  const handleNewArchiving = (
+    code: string,
+    company: string,
+    name: string,
+    onSuccess: () => void,
+    onFail: () => void
+  ) => {
+    const form = new FormData();
+    form.append("code", code);
+    form.append("company", company);
+    form.append("name", name);
+    form.append("action", "create_new_classification_box");
+
+    const req = new XMLHttpRequest();
+    req.onload = () => {
+      if (req.responseText === "201") {
+        onSuccess();
+      } else {
+        alert(req.responseText);
+        onFail();
+      }
+    };
+
+    req.onerror = () => {
+      onFail();
+    };
+
+    req.open("POST", server + "/api.php");
+    req.send(form);
+  };
+
+  const handleAddClassificationBoxData = (
+    code: string,
+    data: string,
+    onSuccess: () => void,
+    onFail: () => void
+  ) => {
+    const form = new FormData();
+    form.append("code", code);
+    form.append("data", data);
+    form.append("action", "add_classification_data");
+
+    const req = new XMLHttpRequest();
+    req.onload = () => {
+      if (req.responseText === "201") {
+        onSuccess();
+      } else {
+        alert(req.responseText);
+        onFail();
+      }
+    };
+
+    req.onerror = () => {
+      onFail();
+    };
+
+    req.open("POST", server + "/api.php");
+    req.send(form);
+  };
+
+  return {
+    handleServerStatus,
+    handleSqlLogin,
+    handleNewArchiving,
+    handleAddClassificationBoxData,
+  };
 };
 
 export default useConnection;

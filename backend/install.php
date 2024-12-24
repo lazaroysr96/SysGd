@@ -50,7 +50,6 @@ function writeConfigFile($host, $user, $db_name, $password)
     $data   .= "defined('DB_NAME') ? NULL : define('DB_NAME', '" . $db_name . "');\n";
     $data   .= "?>";
 
-    // create the new file
     if (fwrite($config_file, $data)) {
 
         fclose($config_file);

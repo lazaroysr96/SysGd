@@ -1,8 +1,6 @@
 import { FC } from "react";
-import TextInput from "./TextInput";
 import ToolBar from "./ToolBar";
-import Button from "./Button";
-import Select from "./Select";
+import Text from "./Text";
 
 const SecondarySidebar: FC = () => {
   return (
@@ -12,34 +10,10 @@ const SecondarySidebar: FC = () => {
 
         <div className="flex size-full flex-col overflow-auto">
           <div className="flex flex-col gap-2 px-2 pb-2">
-            <TextInput label="Código" />
-            <TextInput label="Serie o Subserie Documental " />
-            <Select
-              label="Valoración"
-              options={[
-                { select: "Temporal", onClick: () => {} },
-                { select: "Permanente", onClick: () => {} },
-              ]}
-            />
-            <Select
-              label="Soporte"
-              options={[
-                { select: "Papel", onClick: () => {} },
-                { select: "Digital", onClick: () => {} },
-              ]}
-            />
-            <Select
-              label="Acceso"
-              options={[
-                { select: "Libre", onClick: () => {} },
-                { select: "Restringido", onClick: () => {} },
-              ]}
-            />
-
-            <TextInput label="Plazo de Retención AG" />
-            <TextInput label="Plazo de Retención AC" />
-            <TextInput label="Observaciones" />
-            <Button onClick={() => {}} >Insertar</Button>
+            <Text label="Autor:" />
+            <Text label="Fecha de Creación:" />
+            <Text label="Fecha de Modificación:" />
+            <Text label="Notas:" />
           </div>
         </div>
       </div>

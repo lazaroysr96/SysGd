@@ -1,11 +1,12 @@
 import React, { FC, useEffect, useState } from "react";
 import Input from "../components/Input";
 import Button from "../components/Button";
-import Text, { Variant } from "./Text";
+import Text, { Variant } from "../components/Text";
 import { IoIosApps } from "react-icons/io";
 import useConnection from "../hooks/useConnection";
 import { IoAlertCircle } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import useAlertDialog from "../hooks/useAlertDialog";
 
 const Login: FC = () => {
   const [server, setServer] = useState("");
@@ -18,6 +19,7 @@ const Login: FC = () => {
   const { handleServerStatus, handleSqlLogin } = useConnection();
   const [status, setStatus] = useState("");
   const navigate = useNavigate();
+  const { AlertDialogComponent: DialogComponent, openDialog } = useAlertDialog();
 
   useEffect(() => {
     handleServerStatus(
@@ -46,7 +48,7 @@ const Login: FC = () => {
     );
   };
 
-  const handleServer = (e: React.FormEvent) => {
+  const handleServer = (_e: React.FormEvent) => {
     //e.preventDefault();
     localStorage.setItem("server", server);
     useEffect(() => {
@@ -55,6 +57,7 @@ const Login: FC = () => {
           setStatus(mns);
         },
         (err) => {
+          console.error(err)
           localStorage.removeItem("server");
           setStatus("100");
         }
@@ -69,6 +72,8 @@ const Login: FC = () => {
 
   return (
     <div className="flex items-center justify-center bg-slate-800 h-screen">
+      {DialogComponent(() => {},
+      "El Servidor no está disponible, por favor compruebe que " + localStorage.server + " está en línea")}
       {status === "100" ? (
         <form
           onSubmit={handleServer}
@@ -131,10 +136,13 @@ const Login: FC = () => {
               type="text"
             />
             {status === "404" ? (
-              <div className="flex gap-2 items-center justify-center bg-red-600 text-white size-max p-2 rounded-lg animate-pulse">
+              <button
+                onClick={openDialog}
+                className="flex gap-2 items-center justify-center bg-red-600 text-white size-max p-2 rounded-lg animate-pulse"
+              >
                 <IoAlertCircle />
                 Server not found
-              </div>
+              </button>
             ) : (
               <Button
                 isDisabled={host === "" || databaseName === "" || user === ""}

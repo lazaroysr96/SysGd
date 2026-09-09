@@ -4,6 +4,7 @@ import {
 	upsertContLedgerByUser,
 } from "../services/cont-ledger.service";
 import { getCurrentUserData } from "./users";
+import { recordUserActivity } from "../services/activity.service";
 
 export const getContLedger = async (req: Request, res: Response) => {
 	const user = getCurrentUserData(req);
@@ -14,6 +15,7 @@ export const getContLedger = async (req: Request, res: Response) => {
 
 	try {
 		const record = await getContLedgerByUser(user.id);
+		await recordUserActivity(req, user.id, "data_fetch");
 		res.status(200).json({
 			registro: record?.registro ?? null,
 			inventarioRegistro: record?.inventarioRegistro ?? null,
@@ -58,6 +60,7 @@ export const saveContLedger = async (req: Request, res: Response) => {
 
 	try {
 		const saved = await upsertContLedgerByUser(user.id, registroToSave, inventarioRegistroToSave);
+		await recordUserActivity(req, user.id, "data_sync");
 		res.status(200).json({
 			message: "Registro contable guardado",
 			updatedAt: saved.updatedAt,

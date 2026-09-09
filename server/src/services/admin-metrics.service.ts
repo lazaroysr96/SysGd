@@ -66,6 +66,8 @@ export interface AdminAnalyticsUser {
 	registrationSource: string;
 	lastLoginAt: string | null;
 	loginsInPeriod: number;
+	lastActivityAt: string | null;
+	activityEventsInPeriod: number;
 	projectsCount: number;
 	hasAccounting: boolean;
 }
@@ -74,6 +76,8 @@ export interface AdminAnalyticsSummary {
 	totalUsers: number;
 	newUsersInPeriod: number;
 	usersLoggedInPeriod: number;
+	usersActiveInPeriod: number;
+	activityEventsInPeriod: number;
 	usersWithProjects: number;
 	usersWithAccounting: number;
 	usersWithBothModules: number;
@@ -88,8 +92,10 @@ export interface AdminAnalytics {
 	summary: AdminAnalyticsSummary;
 	registrationSeries: AnalyticsPoint[];
 	loginSeries: LoginAnalyticsPoint[];
+	activitySeries: LoginAnalyticsPoint[];
 	registrationSources: SourceCount[];
 	loginSources: SourceCount[];
+	activitySources: SourceCount[];
 	users: AdminAnalyticsUser[];
 }
 
@@ -148,6 +154,8 @@ type SummaryRow = {
 	total_users: string;
 	new_users_in_period: string;
 	users_logged_in_period: string;
+	users_active_in_period: string;
+	activity_events_in_period: string;
 };
 
 type UsageSummaryRow = {
@@ -165,6 +173,8 @@ type AnalyticsUserRow = {
 	registration_source: string | null;
 	last_login_at: string | null;
 	logins_in_period: string;
+	last_activity_at: string | null;
+	activity_events_in_period: string;
 	projects_count: string;
 	has_accounting: boolean;
 };
@@ -379,8 +389,10 @@ export async function getAdminAnalytics(
 	const [
 		registrationResult,
 		loginResult,
+		activityResult,
 		registrationSourcesResult,
 		loginSourcesResult,
+		activitySourcesResult,
 		summaryResult,
 		usageResult,
 		usersResult,
@@ -401,6 +413,17 @@ export async function getAdminAnalytics(
 			FROM users_logins ul
 			INNER JOIN users u ON u.id = ul.user_id
 			WHERE u.privileges != 'admin' AND ul.login_time >= $1 AND ul.login_time <= $3
+			GROUP BY 1
+			ORDER BY 1
+			`,
+			[startDate.toISOString(), bucketKind, endDate.toISOString(), bucketFormat],
+		),
+		pool.query<LoginBucketValueRow>(
+			`
+			SELECT to_char(date_trunc($2, ua.created_at), $4) AS bucket_key, COUNT(*) AS total, COUNT(DISTINCT ua.user_id) AS unique_users
+			FROM user_activity ua
+			INNER JOIN users u ON u.id = ua.user_id
+			WHERE u.privileges != 'admin' AND ua.created_at >= $1 AND ua.created_at <= $3
 			GROUP BY 1
 			ORDER BY 1
 			`,
@@ -427,6 +450,17 @@ export async function getAdminAnalytics(
 			`,
 			[startDate.toISOString(), endDate.toISOString()],
 		),
+		pool.query<SourceCountRow>(
+			`
+			SELECT COALESCE(NULLIF(ua.client_source, ''), 'unknown') AS source, COUNT(*) AS total
+			FROM user_activity ua
+			INNER JOIN users u ON u.id = ua.user_id
+			WHERE u.privileges != 'admin' AND ua.created_at >= $1 AND ua.created_at <= $2
+			GROUP BY 1
+			ORDER BY total DESC
+			`,
+			[startDate.toISOString(), endDate.toISOString()],
+		),
 		pool.query<SummaryRow>(
 			`
 			SELECT
@@ -437,7 +471,19 @@ export async function getAdminAnalytics(
 					FROM users_logins ul
 					INNER JOIN users u ON u.id = ul.user_id
 					WHERE u.privileges != 'admin' AND ul.login_time >= $1 AND ul.login_time <= $2
-				) AS users_logged_in_period
+				) AS users_logged_in_period,
+				(
+					SELECT COUNT(DISTINCT ua.user_id)
+					FROM user_activity ua
+					INNER JOIN users u ON u.id = ua.user_id
+					WHERE u.privileges != 'admin' AND ua.created_at >= $1 AND ua.created_at <= $2
+				) AS users_active_in_period,
+				(
+					SELECT COUNT(*)
+					FROM user_activity ua
+					INNER JOIN users u ON u.id = ua.user_id
+					WHERE u.privileges != 'admin' AND ua.created_at >= $1 AND ua.created_at <= $2
+				) AS activity_events_in_period
 			`,
 			[startDate.toISOString(), endDate.toISOString()],
 		),
@@ -470,16 +516,22 @@ export async function getAdminAnalytics(
 				u.email,
 				u.created_at,
 				u.registration_source,
-				MAX(ul.login_time) AS last_login_at,
-				COUNT(ul.id) FILTER (WHERE ul.login_time >= $1 AND ul.login_time <= $2) AS logins_in_period,
-				COUNT(DISTINCT p.id) AS projects_count,
-				CASE WHEN clr.user_id IS NULL THEN false ELSE true END AS has_accounting
+				(SELECT MAX(ul.login_time) FROM users_logins ul WHERE ul.user_id = u.id) AS last_login_at,
+				(
+					SELECT COUNT(*)
+					FROM users_logins ul
+					WHERE ul.user_id = u.id AND ul.login_time >= $1 AND ul.login_time <= $2
+				) AS logins_in_period,
+				(SELECT MAX(ua.created_at) FROM user_activity ua WHERE ua.user_id = u.id) AS last_activity_at,
+				(
+					SELECT COUNT(*)
+					FROM user_activity ua
+					WHERE ua.user_id = u.id AND ua.created_at >= $1 AND ua.created_at <= $2
+				) AS activity_events_in_period,
+				(SELECT COUNT(*) FROM projects p WHERE p.created_by = u.id) AS projects_count,
+				EXISTS (SELECT 1 FROM cont_ledger_records clr WHERE clr.user_id = u.id) AS has_accounting
 			FROM users u
-			LEFT JOIN users_logins ul ON ul.user_id = u.id
-			LEFT JOIN projects p ON p.created_by = u.id
-			LEFT JOIN cont_ledger_records clr ON clr.user_id = u.id
 			WHERE u.privileges != 'admin'
-			GROUP BY u.id, u.name, u.email, u.created_at, u.registration_source, clr.user_id
 			ORDER BY u.created_at DESC
 			`,
 			[startDate.toISOString(), endDate.toISOString()],
@@ -491,6 +543,12 @@ export async function getAdminAnalytics(
 	);
 	const loginMap = new Map<string, { total: number; uniqueUsers: number }>(
 		loginResult.rows.map((row) => [
+			row.bucket_key,
+			{ total: toInt(row.total), uniqueUsers: toInt(row.unique_users) },
+		]),
+	);
+	const activityMap = new Map<string, { total: number; uniqueUsers: number }>(
+		activityResult.rows.map((row) => [
 			row.bucket_key,
 			{ total: toInt(row.total), uniqueUsers: toInt(row.unique_users) },
 		]),
@@ -512,12 +570,27 @@ export async function getAdminAnalytics(
 		};
 	});
 
+	const activitySeries: LoginAnalyticsPoint[] = buckets.map((bucket) => {
+		const activityData = activityMap.get(bucket.key);
+		return {
+			key: bucket.key,
+			label: bucket.label,
+			value: activityData?.total ?? 0,
+			uniqueUsers: activityData?.uniqueUsers ?? 0,
+		};
+	});
+
 	const registrationSources: SourceCount[] = registrationSourcesResult.rows.map((row) => ({
 		source: toSourceLabel(row.source),
 		count: toInt(row.total),
 	}));
 
 	const loginSources: SourceCount[] = loginSourcesResult.rows.map((row) => ({
+		source: toSourceLabel(row.source),
+		count: toInt(row.total),
+	}));
+
+	const activitySources: SourceCount[] = activitySourcesResult.rows.map((row) => ({
 		source: toSourceLabel(row.source),
 		count: toInt(row.total),
 	}));
@@ -533,6 +606,8 @@ export async function getAdminAnalytics(
 		registrationSource: toSourceLabel(row.registration_source),
 		lastLoginAt: row.last_login_at,
 		loginsInPeriod: toInt(row.logins_in_period),
+		lastActivityAt: row.last_activity_at,
+		activityEventsInPeriod: toInt(row.activity_events_in_period),
 		projectsCount: toInt(row.projects_count),
 		hasAccounting: row.has_accounting,
 	}));
@@ -546,6 +621,8 @@ export async function getAdminAnalytics(
 			totalUsers: toInt(summaryRow?.total_users),
 			newUsersInPeriod: toInt(summaryRow?.new_users_in_period),
 			usersLoggedInPeriod: toInt(summaryRow?.users_logged_in_period),
+			usersActiveInPeriod: toInt(summaryRow?.users_active_in_period),
+			activityEventsInPeriod: toInt(summaryRow?.activity_events_in_period),
 			usersWithProjects: toInt(usageRow?.users_with_projects),
 			usersWithAccounting: toInt(usageRow?.users_with_accounting),
 			usersWithBothModules: toInt(usageRow?.users_with_both_modules),
@@ -553,8 +630,10 @@ export async function getAdminAnalytics(
 		},
 		registrationSeries,
 		loginSeries,
+		activitySeries,
 		registrationSources,
 		loginSources,
+		activitySources,
 		users,
 	};
 }

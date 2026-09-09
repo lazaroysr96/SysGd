@@ -45,6 +45,8 @@ import {
 import { Badge } from "../../../components/ui/badge"
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar"
 import { 
+  ChevronLeft, 
+  ChevronRight, 
   Crown, 
   Edit, 
   Search, 
@@ -82,8 +84,24 @@ interface UserType {
 }
 
 export default function UsersPage() {
-  const { users, createUser, updateUser, updateUserPlan, deleteUser } = useUsers()
-  const [searchTerm, setSearchTerm] = useState("")
+  const {
+    users,
+    loading,
+    error,
+    page,
+    pageSize,
+    total,
+    totalPages,
+    summary,
+    search,
+    setSearch,
+    setPage,
+    setPageSize,
+    createUser,
+    updateUser,
+    updateUserPlan,
+    deleteUser,
+  } = useUsers(20)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserType | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -98,20 +116,13 @@ export default function UsersPage() {
     planDurationMonths: 1 as 1 | 3 | 12,
   })
 
-  const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  }, [users, searchTerm])
-
   const stats = useMemo(() => {
-    const totalUsers = users.length
-    const adminUsers = users.filter((user) => user.privileges === "admin").length
-    const regularUsers = users.filter((user) => user.privileges === "user").length
-    return { totalUsers, adminUsers, regularUsers }
-  }, [users])
+    return {
+      totalUsers: summary.total,
+      adminUsers: summary.admins,
+      regularUsers: summary.regular,
+    }
+  }, [summary])
 
   const getInitials = (name: string) => {
     return name
@@ -207,6 +218,13 @@ export default function UsersPage() {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return "Sin fecha"
     return date.toLocaleDateString("es-CU")
+  }
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return "Sin actividad"
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return "Sin actividad"
+    return date.toLocaleString("es-CU")
   }
 
   const handleDeleteClick = (user: UserType) => {
@@ -317,15 +335,16 @@ export default function UsersPage() {
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por nombre o email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          {error && <p className="text-sm text-destructive pb-3">{error}</p>}
           <div className="rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
@@ -335,11 +354,12 @@ export default function UsersPage() {
                   <TableHead>Privilegios</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Última actividad</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-3">
@@ -385,6 +405,9 @@ export default function UsersPage() {
                         {getStatusBadge(user.status).label}
                       </Badge>
                     </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDateTime(user.last_activity_at)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <Button
@@ -413,12 +436,63 @@ export default function UsersPage() {
             </Table>
           </div>
 
-          {filteredUsers.length === 0 && (
+          {users.length === 0 && !loading && (
             <div className="text-center py-8">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">No se encontraron usuarios</p>
             </div>
           )}
+
+          {loading && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Cargando usuarios...
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Mostrando {users.length} de {total} usuarios · Página {page} de {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => {
+                  setPageSize(Number(value))
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Por página" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10 / página</SelectItem>
+                  <SelectItem value="20">20 / página</SelectItem>
+                  <SelectItem value="50">50 / página</SelectItem>
+                  <SelectItem value="100">100 / página</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.max(page - 1, 1))}
+                disabled={page <= 1 || loading}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(Math.min(page + 1, totalPages))}
+                disabled={page >= totalPages || loading}
+                className="gap-1"
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

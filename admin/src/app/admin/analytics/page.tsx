@@ -164,6 +164,16 @@ export default function AdminAnalyticsPage() {
 		[analytics?.loginSeries],
 	);
 
+	const activitySeriesForChart = useMemo(
+		() =>
+			(analytics?.activitySeries || []).map((item) => ({
+				key: item.key,
+				label: item.label,
+				value: item.uniqueUsers,
+			})),
+		[analytics?.activitySeries],
+	);
+
 	const periodLabel: Record<AnalyticsPeriod, string> = {
 		week: "Últimos 7 días",
 		month: "Últimos 30 días",
@@ -253,7 +263,7 @@ export default function AdminAnalyticsPage() {
 					<p className="text-xs text-muted-foreground">
 						Rango activo: {formatDateShort(analytics.startDate)} - {formatDateShort(analytics.endDate)}
 					</p>
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
 						<Card className="border-border">
 							<CardHeader className="pb-2 flex flex-row items-center justify-between">
 								<CardTitle className="text-sm text-muted-foreground">Nuevos Registros</CardTitle>
@@ -264,26 +274,48 @@ export default function AdminAnalyticsPage() {
 								<p className="text-xs text-muted-foreground">{periodLabel[analytics.period]}</p>
 							</CardContent>
 						</Card>
-						<Card className="border-border">
-							<CardHeader className="pb-2 flex flex-row items-center justify-between">
-								<CardTitle className="text-sm text-muted-foreground">Usuarios que Iniciaron Sesión</CardTitle>
-								<Activity className="w-4 h-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<p className="text-2xl font-bold">{analytics.summary.usersLoggedInPeriod}</p>
-								<p className="text-xs text-muted-foreground">Con actividad en el periodo</p>
-							</CardContent>
-						</Card>
-						<Card className="border-border">
-							<CardHeader className="pb-2 flex flex-row items-center justify-between">
-								<CardTitle className="text-sm text-muted-foreground">Uso Proyectos</CardTitle>
-								<BarChart3 className="w-4 h-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<p className="text-2xl font-bold">{analytics.summary.usersWithProjects}</p>
-								<p className="text-xs text-muted-foreground">Usuarios con al menos 1 proyecto</p>
-							</CardContent>
-						</Card>
+<Card className="border-border">
+						<CardHeader className="pb-2 flex flex-row items-center justify-between">
+							<CardTitle className="text-sm text-muted-foreground">Usuarios que Iniciaron Sesión</CardTitle>
+							<Activity className="w-4 h-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<p className="text-2xl font-bold">{analytics.summary.usersLoggedInPeriod}</p>
+							<p className="text-xs text-muted-foreground">Con actividad en el periodo</p>
+						</CardContent>
+					</Card>
+					<Card className="border-border">
+						<CardHeader className="pb-2 flex flex-row items-center justify-between">
+							<CardTitle className="text-sm text-muted-foreground">Usuarios Activos</CardTitle>
+							<Users className="w-4 h-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<p className="text-2xl font-bold">{analytics.summary.usersActiveInPeriod}</p>
+							<p className="text-xs text-muted-foreground">
+								Con uso de la app (arranques, sincronizaciones)
+							</p>
+						</CardContent>
+					</Card>
+					<Card className="border-border">
+						<CardHeader className="pb-2 flex flex-row items-center justify-between">
+							<CardTitle className="text-sm text-muted-foreground">Eventos de Actividad</CardTitle>
+							<Activity className="w-4 h-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<p className="text-2xl font-bold">{analytics.summary.activityEventsInPeriod}</p>
+							<p className="text-xs text-muted-foreground">Arranques y sincronizaciones</p>
+						</CardContent>
+					</Card>
+					<Card className="border-border">
+						<CardHeader className="pb-2 flex flex-row items-center justify-between">
+							<CardTitle className="text-sm text-muted-foreground">Uso Proyectos</CardTitle>
+							<BarChart3 className="w-4 h-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<p className="text-2xl font-bold">{analytics.summary.usersWithProjects}</p>
+							<p className="text-xs text-muted-foreground">Usuarios con al menos 1 proyecto</p>
+						</CardContent>
+					</Card>
 						<Card className="border-border">
 							<CardHeader className="pb-2 flex flex-row items-center justify-between">
 								<CardTitle className="text-sm text-muted-foreground">Uso Contabilidad</CardTitle>
@@ -296,7 +328,7 @@ export default function AdminAnalyticsPage() {
 						</Card>
 					</div>
 
-					<div className="grid gap-4 lg:grid-cols-2">
+					<div className="grid gap-4 lg:grid-cols-3">
 						<Card className="border-border">
 							<CardHeader className="pb-2">
 								<CardTitle className="text-base">Registros por periodo</CardTitle>
@@ -321,11 +353,24 @@ export default function AdminAnalyticsPage() {
 								/>
 							</CardContent>
 						</Card>
+						<Card className="border-border">
+							<CardHeader className="pb-2">
+								<CardTitle className="text-base">Usuarios con actividad de app</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<MiniBarChart
+									data={activitySeriesForChart}
+									colorClass="bg-violet-500/80"
+									emptyLabel="Sin actividad registrada"
+								/>
+							</CardContent>
+						</Card>
 					</div>
 
-					<div className="grid gap-4 lg:grid-cols-2">
+					<div className="grid gap-4 lg:grid-cols-3">
 						<SourceBars title="Origen de registro de cuentas" data={analytics.registrationSources} />
 						<SourceBars title="Origen de inicio de sesión" data={analytics.loginSources} />
+						<SourceBars title="Origen de actividad de app" data={analytics.activitySources} />
 					</div>
 
 					<Card className="border-border">
@@ -350,7 +395,8 @@ export default function AdminAnalyticsPage() {
 											<th className="text-left py-2 px-2">Origen Registro</th>
 											<th className="text-center py-2 px-2">Proyectos</th>
 											<th className="text-center py-2 px-2">Contabilidad</th>
-											<th className="text-center py-2 px-2">Logins periodo</th>
+											<th className="text-center py-2 px-2">Actividad periodo</th>
+											<th className="text-left py-2 px-2">Última actividad</th>
 											<th className="text-left py-2 px-2">Último login</th>
 										</tr>
 									</thead>
@@ -366,8 +412,9 @@ export default function AdminAnalyticsPage() {
 												<td className="text-center py-2 px-2">
 													{user.hasAccounting ? "Sí" : "No"}
 												</td>
-												<td className="text-center py-2 px-2">{user.loginsInPeriod}</td>
-												<td className="py-2 px-2">{formatDateTime(user.lastLoginAt)}</td>
+<td className="text-center py-2 px-2">{user.activityEventsInPeriod}</td>
+											<td className="py-2 px-2">{formatDateTime(user.lastActivityAt)}</td>
+											<td className="py-2 px-2">{formatDateTime(user.lastLoginAt)}</td>
 											</tr>
 										))}
 									</tbody>

@@ -23,6 +23,23 @@ export interface User {
 	privileges: UserPrivileges
 	status: UserStatus
 	user_data: UserData
+	is_public?: boolean
+	created_at?: string
+	registration_source?: string
+	last_activity_at?: string | null
+}
+
+export interface AdminUsersPage {
+	users: User[]
+	total: number
+	page: number
+	pageSize: number
+	totalPages: number
+	summary: {
+		total: number
+		admins: number
+		regular: number
+	}
 }
 
 export interface CreateUserData {

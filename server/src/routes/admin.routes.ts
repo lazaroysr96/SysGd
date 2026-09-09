@@ -6,8 +6,28 @@ import {
   getAllMetrics,
   isValidAnalyticsPeriod,
 } from "../services/admin-metrics.service";
+import { listAdminUsersPage } from "../services/admin-users.service";
 
 const router = Router();
+
+router.get(
+  "/users",
+  isAuthenticated,
+  isAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const page = await listAdminUsersPage({
+        page: req.query.page,
+        pageSize: req.query.pageSize,
+        q: req.query.q,
+      });
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ error: "Error al obtener los usuarios" });
+    }
+  }
+);
 
 router.get(
   "/metrics",

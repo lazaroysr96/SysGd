@@ -92,6 +92,40 @@ export async function initDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_activity (
+      id BIGSERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      client_source TEXT NOT NULL DEFAULT 'unknown',
+      ip_address TEXT,
+      user_agent TEXT,
+      meta JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_activity_user_time
+    ON user_activity(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_user_activity_event_time
+    ON user_activity(event_type, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_user_activity_time
+    ON user_activity(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_user_activity_user_event_time
+    ON user_activity(user_id, event_type, created_at DESC);
+  `);
+
+  await pool.query(`
+    ALTER TABLE user_activity
+    ADD COLUMN IF NOT EXISTS client_source TEXT NOT NULL DEFAULT 'unknown';
+  `);
+
+  await pool.query(`
+    ALTER TABLE user_activity
+    ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}'::jsonb;
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS admin_login_2fa_codes (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

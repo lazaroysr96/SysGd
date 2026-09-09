@@ -11,6 +11,7 @@ import { LoginSecurityService } from "../services/loginSecurity.service";
 import { normalizeClientSource, type ClientSource } from "../utils/client-source";
 import { EmailVerificationService } from "../services/emailVerification.service";
 import { AuthAccountError, changeOwnPassword } from "../services/authAccount.service";
+import { recordUserActivity } from "../services/activity.service";
 
 dotenv.config();
 
@@ -626,6 +627,8 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 			privileges: decoded.privileges,
 		});
 		console.log("User :", decoded.name);
+
+		await recordUserActivity(req, decoded.id, "app_start");
 	} catch (err) {
 		console.error("JWT verification error:", err);
 		res.status(401).json({ message: "Sesión inválida o expirada" });

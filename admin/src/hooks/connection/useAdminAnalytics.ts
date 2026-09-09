@@ -26,6 +26,8 @@ export interface AdminAnalyticsUser {
 	registrationSource: string;
 	lastLoginAt: string | null;
 	loginsInPeriod: number;
+	lastActivityAt: string | null;
+	activityEventsInPeriod: number;
 	projectsCount: number;
 	hasAccounting: boolean;
 }
@@ -34,6 +36,8 @@ export interface AdminAnalyticsSummary {
 	totalUsers: number;
 	newUsersInPeriod: number;
 	usersLoggedInPeriod: number;
+	usersActiveInPeriod: number;
+	activityEventsInPeriod: number;
 	usersWithProjects: number;
 	usersWithAccounting: number;
 	usersWithBothModules: number;
@@ -48,8 +52,10 @@ export interface AdminAnalytics {
 	summary: AdminAnalyticsSummary;
 	registrationSeries: AnalyticsPoint[];
 	loginSeries: LoginAnalyticsPoint[];
+	activitySeries: LoginAnalyticsPoint[];
 	registrationSources: SourceCount[];
 	loginSources: SourceCount[];
+	activitySources: SourceCount[];
 	users: AdminAnalyticsUser[];
 }
 

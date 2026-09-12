@@ -34,7 +34,7 @@ if (isAcceptAllOrigins) {
 		}),
 	);
 } else if (allowedOrigins.length === 0) {
-	console.log(`Aceptando solicitudes desde ${CLIENT_HOST}`);
+	console.log(`Aceptando solicitudes desde: ${CLIENT_HOST}`);
 	app.use(
 		cors({
 			origin: CLIENT_HOST,

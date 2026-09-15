@@ -1,10 +1,11 @@
+// components/descubre-post-card.tsx
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+// import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { VoteButton } from "@/components/vote-button"
 import {
-	ArrowRight,
 	Calendar,
+	ImageIcon,
 	MapPin,
 	MessageCircle,
 	Pencil,
@@ -45,7 +46,7 @@ export function DescubrePostCard({
 	const navigate = useNavigate()
 	const formattedDate = new Date(post.date).toLocaleDateString("es-ES", {
 		year: "numeric",
-		month: "long",
+		month: "short",
 		day: "numeric",
 	})
 
@@ -60,81 +61,80 @@ export function DescubrePostCard({
 	return (
 		<Card
 			onClick={openDetail}
-			className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-full cursor-pointer group"
+			className="overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col h-full cursor-pointer group py-0 gap-0"
 		>
-			{featuredImage && (
-				<div className="relative aspect-[16/9] overflow-hidden bg-muted">
+			{/* ---------- Imagen con overlays ---------- */}
+			<div className="relative aspect-[16/10] overflow-hidden bg-muted">
+				{featuredImage ? (
 					<img
 						src={featuredImage}
 						alt={post.title}
 						loading="lazy"
-						className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+						className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
 					/>
-				</div>
-			)}
+				) : (
+					<div className="w-full h-full flex items-center justify-center">
+						<ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+					</div>
+				)}
 
-			<div className="p-6 md:p-8 flex flex-col flex-1 gap-4">
-				<div className="flex items-start justify-between gap-3 flex-wrap">
-					<div className="flex items-center gap-2 flex-wrap">
-						{onVote && (
+				<div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+
+				{post.category && (
+					<span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-sm text-white text-[11px] font-medium uppercase tracking-wide">
+						{post.category}
+					</span>
+				)}
+
+				<span className="absolute bottom-3 left-3 text-white font-bold text-xl drop-shadow-sm">
+					{priceLabel}
+				</span>
+			</div>
+
+			<div className="p-5 flex flex-col flex-1 gap-3">
+				<div className="flex items-start justify-between gap-3">
+					<h3 className="text-lg font-bold text-balance line-clamp-2 leading-snug">
+						{post.title}
+					</h3>
+					{onVote && (
+						<div className="shrink-0">
 							<VoteButton
 								votesCount={post.votesCount ?? 0}
 								voted={!!post.viewerVoted}
 								onVote={() => onVote(post)}
 							/>
-						)}
-						{post.category && <Badge variant="secondary">{post.category}</Badge>}
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
-							<Calendar className="w-4 h-4" />
-							{formattedDate}
 						</div>
-					</div>
-					<Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold shrink-0">
-						{priceLabel}
-					</Badge>
+					)}
 				</div>
 
-				<h3 className="text-xl md:text-2xl font-bold text-balance line-clamp-2">
-					{post.title}
-				</h3>
-
 				{preview && (
-					<p className="text-muted-foreground leading-relaxed text-sm md:text-base line-clamp-4">
+					<p className="text-muted-foreground leading-relaxed text-sm line-clamp-3">
 						{preview}
 					</p>
 				)}
 
-				<Button
-					variant="outline"
-					size="sm"
-					className="w-fit mt-auto"
-					onClick={(e) => {
-						e.stopPropagation()
-						openDetail()
-					}}
-				>
-					Leer más
-					<ArrowRight className="w-4 h-4" />
-				</Button>
+				<div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-auto pt-1">
+					{post.userName && (
+						<span className="flex items-center gap-1 min-w-0">
+							<User className="w-3.5 h-3.5 shrink-0" />
+							<span className="truncate max-w-[100px]">{post.userName}</span>
+						</span>
+					)}
+					{post.province && (
+						<span className="flex items-center gap-1">
+							<MapPin className="w-3.5 h-3.5" />
+							{post.province}
+						</span>
+					)}
+					<span className="flex items-center gap-1">
+						<Calendar className="w-3.5 h-3.5" />
+						{formattedDate}
+					</span>
+				</div>
 
-				<div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground pt-4 border-t border-border/50">
-					<div className="flex flex-wrap items-center gap-4 min-w-0">
-						{post.userName && (
-							<div className="flex items-center gap-1.5 min-w-0">
-								<User className="w-4 h-4 shrink-0" />
-								<span className="truncate">{post.userName}</span>
-							</div>
-						)}
-						{post.province && (
-							<div className="flex items-center gap-1.5 shrink-0">
-								<MapPin className="w-4 h-4" />
-								<span>{post.province}</span>
-							</div>
-						)}
-					</div>
-
-					{isOwner && (
-						<div className="flex items-center gap-1 shrink-0">
+				<div className="flex items-center justify-between gap-2 pt-3 border-t border-border/50">
+					{isOwner ? (
+						<div className="flex items-center gap-1">
 							{onEdit && (
 								<Button
 									variant="ghost"
@@ -162,22 +162,24 @@ export function DescubrePostCard({
 								</Button>
 							)}
 						</div>
+					) : (
+						<span />
+					)}
+
+					{whatsAppUrl && (
+						<Button
+							asChild
+							size="sm"
+							className="bg-emerald-600 hover:bg-emerald-700 text-white"
+							onClick={(e) => e.stopPropagation()}
+						>
+							<a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
+								<MessageCircle className="w-4 h-4" />
+								WhatsApp
+							</a>
+						</Button>
 					)}
 				</div>
-
-				{whatsAppUrl && (
-					<Button
-						asChild
-						variant="secondary"
-						className="w-full sm:w-auto"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<a href={whatsAppUrl} target="_blank" rel="noopener noreferrer">
-							<MessageCircle className="w-4 h-4 mr-2" />
-							Contactar por WhatsApp
-						</a>
-					</Button>
-				)}
 			</div>
 		</Card>
 	)
